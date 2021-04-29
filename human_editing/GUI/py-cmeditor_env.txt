@@ -2,6 +2,7 @@
 # $ conda create --name <env> --file <this file>
 # platform: osx-64
 @EXPLICIT
+https://conda.anaconda.org/conda-forge/osx-64/wxpython-4.1.1-py38hf7583a9_1.tar.bz2
 https://conda.anaconda.org/conda-forge/osx-64/pthread-stubs-0.4-h1de35cc_1001.tar.bz2
 https://conda.anaconda.org/conda-forge/osx-64/bzip2-1.0.8-h0b31af3_2.tar.bz2
 https://conda.anaconda.org/conda-forge/osx-64/ca-certificates-2020.6.20-hecda079_0.tar.bz2
@@ -118,5 +119,5 @@ https://conda.anaconda.org/conda-forge/noarch/pip-20.1-pyh9f0ad1d_0.tar.bz2
 https://conda.anaconda.org/conda-forge/noarch/urllib3-1.25.9-py_0.tar.bz2
 https://conda.anaconda.org/conda-forge/osx-64/fiona-1.8.17-py38hcfd527e_0.tar.bz2
 https://conda.anaconda.org/conda-forge/noarch/requests-2.23.0-pyh8c360ce_2.tar.bz2
-https://conda.anaconda.org/conda-forge/noarch/folium-0.11.0-py_0.tar.bz2
+https://conda.anaconda.org/conda-forge/noarch/folium-0.12.0-pyhd8ed1ab_1.tar.bz2
 https://conda.anaconda.org/conda-forge/noarch/geopandas-0.8.1-py_0.tar.bz2

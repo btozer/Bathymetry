@@ -126,7 +126,7 @@ class PyCMeditor(wx.Frame):
         # CREATE PANEL FOR PYTHON CONSOLE (USED FOR DEBUGGING AND CUSTOM USAGES)
         self.ConsolePanel = wx.Panel(self, -1, size=(1700, 50), style=wx.ALIGN_LEFT | wx.BORDER_RAISED | wx.EXPAND)
         intro = "###############################################################\r" \
-                "!USE import sys; then sys.Gmg.OBJECT TO ACCESS PROGRAM OBJECTS \r" \
+                "!USE import sys; then sys.t.OBJECT TO ACCESS PROGRAM OBJECTS \r" \
                 "ctrl+up FOR COMMAND HISTORY                                    \r" \
                 "###############################################################"
         py_local = {'__app__': 'gmg Application'}
@@ -136,7 +136,7 @@ class PyCMeditor(wx.Frame):
 
         # ADD THE PANES TO THE AUI MANAGER
         self.mgr.AddPane(self.left_panel, aui.AuiPaneInfo().Name('left').Left().Caption("Controls"))
-        self.mgr.AddPane(self.right_panel_bottom, aui.AuiPaneInfo().Name('rightbottom').CenterPane())
+        self.mgr.AddPane(self.right_panel_bottom, aui.AuiPaneInfo().Name('rightbottom').CenterPane().Caption(""))
         self.mgr.AddPane(self.ConsolePanel, aui.AuiPaneInfo().Name('console').Bottom().Caption("Console"))
         # self.mgr.GetPaneByName('console').Hide()  # HIDE PYTHON CONSOLE BY DEFAULT
         self.mgr.Update()
@@ -172,7 +172,7 @@ class PyCMeditor(wx.Frame):
         self.Bind(wx.EVT_CLOSE, self.on_close_button)
 
         # MAXIMIZE FRAME
-        self.Maximize()
+        #self.Maximize()
 
         # INITIALISE THREE DIMENSION VIEWER OBJECTS
         self.predicted_xyz = None
@@ -267,7 +267,7 @@ class PyCMeditor(wx.Frame):
 
         # CREATE MAP
         self.folium_map = folium.Map(location=[0.0, 0.0],
-                                     zoom_start=2,
+                                     zoom_start=1,
                                      attr='map',
                                      no_wrap=True,
                                      name='map',
@@ -275,12 +275,14 @@ class PyCMeditor(wx.Frame):
                                      tiles=None)
 
         # ADD SRTM15+ TILES
-        self.tiles = folium.TileLayer(tiles='/Users/brook/PROJECTS/ML/Bathymetry/human_editing/8-xyz-tiles/{z}/{x}/{y}.png',
-                                      name='SRTM15+V2.1', attr='SRTM15+V2.1', overlay=True, control=True)
+        #self.tiles = folium.TileLayer(tiles='/Volumes/External_B/SRTM_tiles/{z}/{x}/{y}.png',
+        #                              name='SRTM15+V2.1', attr='SRTM15+V2.1', overlay=True, control=True, show=False)
+        self.tiles = folium.TileLayer(tiles='https://server.arcgisonline.com/ArcGIS/rest/services/Ocean_Basemap/MapServer/tile/{z}/{y}/{x}.png',
+                                      name='Test', attr='Test', overlay=True, control=True, show=True)
         self.tiles.add_to(self.folium_map)
 
-        self.regridded = folium.TileLayer(tiles='',  name='Regrid', attr='regridded', overlay=False, control=False)
-        self.regridded.add_to(self.folium_map)
+        #self.regridded = folium.TileLayer(tiles='',  name='Regrid', attr='regridded', overlay=False, control=False)
+        #self.regridded.add_to(self.folium_map)
 
         # LOAD DRAWING FUNCTIONALITY
         self.draw = Draw(filename='outpoint.geojson',
@@ -321,8 +323,8 @@ class PyCMeditor(wx.Frame):
         # CREATE GUI HTML WINDOW
         # wx.html2.WebView.MSWSetEmulationLevel(wx.html2.WEBVIEWIE_EMU_IE11)
         self.browser = wx.html2.WebView.New(self.right_panel_bottom, -1)
-        # self.browser.MSWSetEmulationLevel(level=wx.html2.WEBVIEWIE_EMU_IE11)
-        # self.browser.Bind(wx.html2.EVT_HTML_LINK_CLICKED, self.on_import)
+        #self.browser.MSWSetEmulationLevel(level=wx.html2.WEBVIEWIE_EMU_IE11)
+        #self.browser.Bind(wx.html2.EVT_HTML_LINK_CLICKED, self.on_import)
         # wx.html2.WebView.WEBVIEW_
 
         # LOAD FOLIUM MAP INTO WXPYTHON HTML WINDOW
@@ -382,7 +384,7 @@ class PyCMeditor(wx.Frame):
         # ADD MAIN COORDINATE MAP BOX
         self.box_right_bottom_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.box_right_bottom_sizer.Add(self.browser, 1, wx.ALL | wx.EXPAND, border=2)
-        # self.box_right_bottom_sizer.Add(self.canvas, 1, wx.ALL | wx.ALIGN_RIGHT | wx.EXPAND, border=2)
+        #self.box_right_bottom_sizer.Add(self.right_panel_bottom, 1, wx.ALL | wx.ALIGN_RIGHT | wx.EXPAND, border=2)
 
         # CREATE LAYER BUTTON BOX
         self.left_box_top_sizer = wx.FlexGridSizer(cols=1, rows=8, hgap=8, vgap=8)
@@ -464,6 +466,7 @@ class PyCMeditor(wx.Frame):
                 #  GET THE FILE NAME FROM FileDialog WINDOW
                 self.cm_file = open_file_dialog.GetPath()
                 self.cm_filename = open_file_dialog.Filename
+                self.cm_dir = open_file_dialog.Directory
 
                 # SET THE CLUSTER ZOOM LEVEL TERMINATION
                 if open_cm_dialogbox.regular_load_button is True:
@@ -476,6 +479,7 @@ class PyCMeditor(wx.Frame):
 
     def load_cm_file_as_cluster(self, bad_th, uncertain_th):
         """LOAD .cm FILE AND PLOT AS CLUSTERS"""
+        # CM format: ID, Lon, Lat, Depth, SIG H, SIG D, SID, pred, score
         try:
             # 1.0 OPEN THE .cm FILE USING NUMPY
             self.cm = np.genfromtxt(self.cm_file, delimiter=' ', filling_values=-9999)
@@ -487,12 +491,12 @@ class PyCMeditor(wx.Frame):
             self.xyz_meta_data = self.cm[:, 4:self.xyz_width]
             self.xyz_point_flags = np.zeros(shape=(1, len(self.xyz)))
             self.xyz_cm_line_number = np.linspace(0, len(self.xyz), (len(self.xyz) + 1))
-            self.score_xyz = self.cm[:, [1, 2, 6]]  # ML SCORE
+            self.score_xyz = self.cm[:, [1, 2, 8]]  # ML SCORE
 
             # 2.0 GENERATE COLORS FOR THE DEPTHS AND SCORES
             colors = np.empty(shape=[self.cm.shape[0], 2], dtype=object)
             for i in range(0, self.cm.shape[0]):
-                colors[i, 0] = self.color_score(self.cm[i, 5])
+                colors[i, 0] = self.color_score(self.cm[i, 8])
                 colors[i, 1] = self.color_depth(self.cm[i, 3])
 
             # 2.1 ADD COLORS TO CM ARRAY
@@ -501,14 +505,14 @@ class PyCMeditor(wx.Frame):
             # 3.0 DIVIDE RECORDS INTO BAD, UNCERTAIN, GOOD (BASED ON ML SCORE)
 
             # 3.1 MAKE NUMPY ARRAY WITH BAD SCORES
-            scored_bad = self.cm[self.cm[:, 6] <= bad_th]
+            scored_bad = self.cm[self.cm[:, 8] <= bad_th]
 
             # 3.2 MAKE NUMPY ARRAY WITH UNCERTAIN SCORES
-            scored_uncertain = self.cm[self.cm[:, 6] > bad_th]
-            scored_uncertain = scored_uncertain[scored_uncertain[:, 6] <= uncertain_th]
+            scored_uncertain = self.cm[self.cm[:, 8] > bad_th]
+            scored_uncertain = scored_uncertain[scored_uncertain[:, 8] <= uncertain_th]
 
             # 3.3 MAKE NUMPY ARRAY WITH GOOD SCORES
-            scored_good = self.cm[self.cm[:, 6] > uncertain_th]
+            scored_good = self.cm[self.cm[:, 8] > uncertain_th]
 
             # 4.0 LOAD CM DATA INTO THE HTML WINDOW
 
@@ -516,12 +520,6 @@ class PyCMeditor(wx.Frame):
             callback = ('function (input) {'
                         'var circle = L.circle(new L.LatLng(input[0], input[1]), '
                         '{color: input[2],  radius: 10,  opacity: 0.5});'
-                        "var popup = L.popup({maxWidth: '300'});"
-                        "const display_text = {text: input[3]};"
-                        "var mytext = $(`<div id='mytext' class='display_text' style='width: 100.0%; "
-                        "height: 100.0%;'> ${display_text.text}</div>`)[0];"
-                        "popup.setContent(mytext);"
-                        "circle.bindPopup(popup);"
                         'return circle};')
 
             callback2 = ('function (input) {'
@@ -536,25 +534,25 @@ class PyCMeditor(wx.Frame):
                          'return circle};')
 
             # CREATE CLUSTER OBJECTS
-            self.bad_fg.add_child(FastMarkerCluster((scored_bad[:, (2, 1, 9, 6)]).tolist(),
+            self.bad_fg.add_child(FastMarkerCluster((scored_bad[:, (2, 1, 9)]).tolist(),
                                                     callback=callback, disableClusteringAtZoom=self.zoom_level))
 
-            self.uncertain_fg.add_child(FastMarkerCluster((scored_uncertain[:, (2, 1, 9, 6)]).tolist(),
+            self.uncertain_fg.add_child(FastMarkerCluster((scored_uncertain[:, (2, 1, 9)]).tolist(),
                                                           callback=callback, disableClusteringAtZoom=self.zoom_level))
 
-            self.good_fg.add_child(FastMarkerCluster((scored_good[:, (2, 1, 9, 6)]).tolist(),
+            self.good_fg.add_child(FastMarkerCluster((scored_good[:, (2, 1, 9)]).tolist(),
                                                      callback=callback, disableClusteringAtZoom=self.zoom_level))
 
             # CREATE DEPTH DIFFERENCE CLUSTER OBJECTS
-            self.bad_fg_depthdiff.add_child(FastMarkerCluster((scored_bad[:, (2, 1, 10, 8)]).tolist(),
+            self.bad_fg_depthdiff.add_child(FastMarkerCluster((scored_bad[:, (2, 1, 10, 7)]).tolist(),
                                                               callback=callback2,
                                                               disableClusteringAtZoom=self.zoom_level))
 
-            self.uncertain_fg_depthdiff.add_child(FastMarkerCluster((scored_uncertain[:, (2, 1, 10, 8)]).tolist(),
+            self.uncertain_fg_depthdiff.add_child(FastMarkerCluster((scored_uncertain[:, (2, 1, 10, 7)]).tolist(),
                                                                     callback=callback2,
                                                                     disableClusteringAtZoom=self.zoom_level))
 
-            self.good_fg_depthdiff.add_child(FastMarkerCluster((scored_good[:, (2, 1, 10, 8)]).tolist(),
+            self.good_fg_depthdiff.add_child(FastMarkerCluster((scored_good[:, (2, 1, 10, 7)]).tolist(),
                                                                callback=callback2,
                                                                disableClusteringAtZoom=self.zoom_level))
 
@@ -576,8 +574,8 @@ class PyCMeditor(wx.Frame):
 
     def set_map_location(self):
         map_name = self.folium_map.get_name()
-        r, lt = self.browser.RunScript(str(map_name) + '.getCenter()["lat"]')
-        r, ln = self.browser.RunScript(str(map_name) + '.getCenter()["lng"]')
+        r, lt = self.browser.RunScript(str(map_name) + '.getCenter()[\'lat\']')
+        r, ln = self.browser.RunScript(str(map_name) + '.getCenter()[\'lng\']')
         r, zoom = self.browser.RunScript(str(map_name) + '.getZoom()')
         self.folium_map.options['zoom'] = zoom
         self.folium_map.location = [lt, ln]
@@ -608,8 +606,8 @@ class PyCMeditor(wx.Frame):
             cm_file = self.cm[:, 1:4]
             np.savetxt('input.xyz', cm_file, delimiter=" ", fmt="%10.6f %10.6f %10.6f")
 
-            # RUN BASH SCRIPT '
-            subprocess.run(["bash", self.cwd + '/' + 'get_predicted.sh', self.cwd + '/' + self.cm_filename, epsg_code])
+            # RUN BASH SCRIPT
+            subprocess.run(["bash", self.cwd + '/' + 'get_predicted.sh', self.cm_dir + '/' + self.cm_filename, epsg_code])
 
             # LOAD CURRENT GRID XYZ POINTS
             self.predicted_xyz = np.genfromtxt('predicted.xyz', delimiter=' ', dtype=float, filling_values=-9999)

@@ -74,3 +74,30 @@ Indexes:<br>
 -    "pings_latitude_btree_index" btree (latitude)
 -    "pings_longitude_btree_index" btree (longitude)
 
+
+# Human editing software 
+
+## dev environment installation
+First install the Anaconda Python distribution:
+    
+    https://www.anaconda.com/download/#all
+ 
+ Then in a terminal run:
+ 
+    conda create --name pycmeditor
+    source activate pycmeditor
+    conda install -c clinicalgraphics vtk
+    conda install python.app=1.2
+    conda install wxpython=4.0.1
+    conda install folium
+
+To run the app use:
+    
+    pythonw Py-CMeditor.py
+
+The there is a demo .cm file to load in the human_editing branch. 
+
+## Notes
+Dev branch is called: human_editing
+
+Once software is completed, a pip package will be created for distributing.
